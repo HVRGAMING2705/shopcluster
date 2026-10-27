@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShopCluster — Customer Segmentation with K-Means | Vikranth Reddy</title>
+<meta name="description" content="ShopCluster groups shoppers into 4 segments with K-Means clustering. Try the interactive demo: enter age, income and spending score to find a customer's segment.">
+<link rel="canonical" href="https://shopcluster.vercel.app/">
+<meta property="og:title" content="ShopCluster — Customer Segmentation with K-Means">
+<meta property="og:description" content="K-Means clustering sorts 300 shoppers into 4 segments. Try the live demo in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://shopcluster.vercel.app/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ShopCluster — Customer Segmentation with K-Means">
+<meta name="twitter:description" content="K-Means clustering sorts 300 shoppers into 4 segments. Try the live demo.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"ShopCluster","applicationCategory":"EducationalApplication","author":{"@type":"Person","name":"Vikranth Reddy"},"description":"K-Means customer segmentation demo that runs entirely in the browser."}</script>
+<style>body{font-family:system-ui,Arial,sans-serif;max-width:760px;margin:2em auto;padding:0 1em;color:#111;line-height:1.5}h1{font-size:1.9em}label{display:block;margin:.6em 0}input{width:100%;padding:.5em;font-size:1em}button{padding:.7em 1.4em;font-size:1em;cursor:pointer}#out{border:1px solid #ccc;padding:1em;margin-top:1em}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.4em;text-align:left}small{color:#555}</style>
+</head>
+<body>
+<h1>ShopCluster</h1>
+<p><strong>Customer segmentation with K-Means clustering.</strong> Trained on 300 synthetic shoppers, the model finds 4 natural groups — no labels needed, the clusters emerge from the data. Silhouette score: <strong>0.53</strong> (0 = overlapping, 1 = perfectly separated).</p>
+<h2>Try it</h2>
+<label>Age (years) <input id="age" type="number" value="28" min="18" max="75"></label>
+<label>Annual income ($k) <input id="income" type="number" value="48" min="15" max="130"></label>
+<label>Spending score (1&ndash;100) <input id="spend" type="number" value="78" min="1" max="100"></label>
+<p><button onclick="go()">Find segment</button> <button onclick="demo(24,45,82)">Young example</button> <button onclick="demo(48,92,68)">Affluent example</button></p>
+<div id="out">Enter values and click Find segment.</div>
+<h2>The 4 segments</h2>
+<table><tr><th>Segment</th><th>Typical age</th><th>Income</th><th>Spending</th><th>Size</th></tr><tr><td>Affluent Regulars</td><td>45 yrs</td><td>$90k</td><td>70/100</td><td>76 customers</td></tr><tr><td>Budget Families</td><td>40 yrs</td><td>$30k</td><td>28/100</td><td>76 customers</td></tr><tr><td>Young Spenders</td><td>25 yrs</td><td>$43k</td><td>79/100</td><td>76 customers</td></tr><tr><td>Careful Seniors</td><td>60 yrs</td><td>$55k</td><td>24/100</td><td>72 customers</td></tr></table>
+<h2>How it works</h2>
+<ol><li>Each shopper is a point in 3-D: age, income, spending score.</li><li>Features are standardised (mean 0, spread 1) so income does not swamp age.</li><li>K-Means starts with 4 centres and moves them until shoppers stop switching groups.</li><li>A new shopper joins the segment whose centre is nearest — the exact same centres run here in JavaScript, no server needed.</li></ol>
+<p><small>By Vikranth Reddy, B.Tech CSE (AI &amp; ML), Woxsen University. Educational demo on synthetic data. Code: <a href="https://github.com/HVRGAMING2705/shopcluster">github.com/HVRGAMING2705/shopcluster</a></small></p>
+<script>
+const MODEL = {"features": ["age", "annual_income_k", "spending_score"], "means": [42.23700950568327, 54.55555344106422, 50.753868589813976], "stds": [14.200753810792243, 24.385592462407676, 26.320268859302203], "centroids_std": [[0.1858766335629956, 1.4330764669505918, 0.7496697637261199], [-0.17538173319935899, -1.003743505396937, -0.8732622071795761], [-1.218438206072319, -0.4628395709652928, 1.0720613351291655], [1.2750512671369396, 0.03536808771228904, -1.0011616078799113]], "centroids_orig": [[44.87659781809021, 89.50197213158839, 70.485378326775], [39.746456689609126, 30.078673381666015, 27.76937251217987], [24.93426850758692, 43.268936288028975, 78.9708111640761], [60.34369864643364, 55.41802521419079, 24.403025898803424]], "cluster_names": ["Affluent Regulars", "Budget Families", "Young Spenders", "Careful Seniors"], "cluster_sizes": [76, 76, 76, 72], "metrics": {"silhouette": 0.5304527190373911, "inertia": 155.94611618568274, "n": 300}};
+const DESC = {"Young Spenders": "Young, trend-driven shoppers who spend freely. Best offer: new arrivals, limited drops and student-friendly deals.", "Affluent Regulars": "High earners who shop often and spend well. Best offer: premium service, early access and loyalty rewards.", "Budget Families": "Value-first shoppers watching every rupee/dollar. Best offer: bundles, discounts and everyday essentials.", "Careful Seniors": "Deliberate shoppers who spend only when convinced. Best offer: clear pricing, honest reviews and helpful support."};
+function go(){
+  const v = [parseFloat(document.getElementById('age').value), parseFloat(document.getElementById('income').value), parseFloat(document.getElementById('spend').value)];
+  const z = v.map((x,i) => (x - MODEL.means[i]) / MODEL.stds[i]);
+  const dists = MODEL.centroids_std.map(c => Math.sqrt(c.reduce((s,ci,i) => s + (z[i]-ci)**2, 0)));
+  const k = dists.indexOf(Math.min(...dists));
+  const name = MODEL.cluster_names[k];
+  document.getElementById('out').innerHTML = '<strong>Segment: ' + name + '</strong><br>Distance to each centre: ' + dists.map(d => d.toFixed(2)).join(' &middot; ') + '<br>' + DESC[name];
+}
+function demo(a,i,s){ document.getElementById('age').value=a; document.getElementById('income').value=i; document.getElementById('spend').value=s; go(); }
+</script>
+</body>
+</html>
